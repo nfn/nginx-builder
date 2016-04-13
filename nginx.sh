@@ -81,5 +81,5 @@ mkdir -p $BPATH/nginx
 touch $STATICLIBSSL/.openssl/include/openssl/ssl.h
 make -j $PROC
 echo "Done.";
-echo "You can now 'make install' or just copy the nginx binary to /usr/sbin fold                                                                                                                er!";
+echo "You can now 'make install' or just copy the nginx binary to /usr/sbin folder!";
 echo "Don't forget to copy 'nginx.service' to /lib/systemd/system/";
