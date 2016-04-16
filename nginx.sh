@@ -63,8 +63,6 @@ mkdir -p $BPATH/nginx
   --http-scgi-temp-path=/dev/shm/nginx_scgi_temp \
   --user=nginx \
   --group=nginx \
-  --with-pcre=$BPATH/$VERSION_PCRE \
-  --with-pcre-jit \
   --with-http_ssl_module \
   --with-http_realip_module \
   --with-http_gunzip_module \
@@ -74,6 +72,8 @@ mkdir -p $BPATH/nginx
   --with-file-aio \
   --with-ipv6 \
   --with-http_v2_module \
+  --with-pcre=$BPATH/$VERSION_PCRE \
+  --with-pcre-jit \
   --with-openssl=$STATICLIBSSL \
   --with-ld-opt="-lrt" \
   --add-module=$BPATH/ngx_brotli_module-master
@@ -82,4 +82,4 @@ touch $STATICLIBSSL/.openssl/include/openssl/ssl.h
 make -j $PROC
 echo "Done.";
 echo "You can now 'make install' or just copy the nginx binary to /usr/sbin folder!";
-echo "Don't forget to copy 'nginx.service' to /lib/systemd/system/";
+echo "Don't forget to copy 'nginx.service' to /lib/systemd/system/ and logrotate to it's place";
