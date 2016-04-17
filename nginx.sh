@@ -18,30 +18,42 @@ mkdir build
 # Faster build
 PROC=$(grep -c ^processor /proc/cpuinfo)
 
+cd build
+
 # Download the source files
 echo "Downloading sources"
-wget -P ./build $SOURCE_PCRE$VERSION_PCRE.tar.gz
-wget -P ./build $SOURCE_LIBRESSL$VERSION_LIBRESSL.tar.gz
-wget -P ./build $SOURCE_NGINX$VERSION_NGINX.tar.gz
-wget -P ./build $SOURCE_NGX_BROTLI$VERSION_NGX_BROTLI.tar.gz
 
-# Extract the source files
-echo "Extracting Packages"
-cd build
+wget -P ./ $SOURCE_NGINX$VERSION_NGINX.tar.gz
 tar xzf $VERSION_NGINX.tar.gz
+rm $VERSION_NGINX.tar.gz
+
+wget -P ./ $SOURCE_LIBRESSL$VERSION_LIBRESSL.tar.gz
 tar xzf $VERSION_LIBRESSL.tar.gz
+rm $VERSION_LIBRESSL.tar.gz
+
+wget -P ./ $SOURCE_PCRE$VERSION_PCRE.tar.gz
 tar xzf $VERSION_PCRE.tar.gz
+rm $VERSION_PCRE.tar.gz
+
+wget -P ./ $SOURCE_NGX_BROTLI$VERSION_NGX_BROTLI.tar.gz
 tar zxf $VERSION_NGX_BROTLI.tar.gz
+rm $VERSION_NGX_BROTLI.tar.gz
+
+wget -P ./ http://www.linuxfromscratch.org/patches/blfs/svn/pcre-8.38-upstream_fixes-1.patch
+
+# Patch PCRE
+cd pcre-8.38
+patch -Np1 -i ../pcre-8.38-upstream_fixes-1.patch
 
 cd ../
-
-export BPATH=$(pwd)/build
+export BPATH=$(pwd)
 export STATICLIBSSL=$BPATH/$VERSION_LIBRESSL
 
 # Build static LibreSSL
 echo "Configure & Build LibreSSL"
 cd $STATICLIBSSL
 ./configure LDFLAGS=-lrt --prefix=${STATICLIBSSL}/.openssl/ && make install-strip -j $PROC
+
 # Build nginx
 echo "Configure & Build Nginx"
 cd $BPATH/$VERSION_NGINX
@@ -70,6 +82,7 @@ cd $BPATH/$VERSION_NGINX
   --with-file-aio \
   --with-ipv6 \
   --with-http_v2_module \
+  --with-libatomic \
   --with-pcre=$BPATH/$VERSION_PCRE \
   --with-pcre-jit \
   --with-openssl=$STATICLIBSSL \
@@ -78,6 +91,8 @@ cd $BPATH/$VERSION_NGINX
 
 touch $STATICLIBSSL/.openssl/include/openssl/ssl.h
 make -j $PROC
+
+echo "----------------------------------------------------------------------------------------";
 echo "Done.";
 echo "You can now 'make install' or just copy the nginx binary to /usr/sbin folder!";
 echo "Don't forget to copy 'nginx.service' to /lib/systemd/system/ and logrotate to it's place";
