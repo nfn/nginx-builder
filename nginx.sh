@@ -42,7 +42,7 @@ rm $VERSION_NGX_BROTLI.tar.gz
 wget -P ./ http://www.linuxfromscratch.org/patches/blfs/svn/pcre-8.38-upstream_fixes-1.patch
 
 # Patch PCRE
-cd pcre-8.38
+cd $VERSION_PCRE
 patch -Np1 -i ../pcre-8.38-upstream_fixes-1.patch
 
 cd ../
