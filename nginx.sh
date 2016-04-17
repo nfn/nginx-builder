@@ -41,8 +41,7 @@ export STATICLIBSSL=$BPATH/$VERSION_LIBRESSL
 # Build static LibreSSL
 echo "Configure & Build LibreSSL"
 cd $STATICLIBSSL
-./configure LDFLAGS=-lrt --prefix=${STATICLIBSSL}/.openssl/ && make install-stri                                                                                                                p -j $PROC
-
+./configure LDFLAGS=-lrt --prefix=${STATICLIBSSL}/.openssl/ && make install-strip -j $PROC
 # Build nginx
 echo "Configure & Build Nginx"
 cd $BPATH/$VERSION_NGINX
