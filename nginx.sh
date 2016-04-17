@@ -46,7 +46,6 @@ cd $STATICLIBSSL
 echo "Configure & Build Nginx"
 cd $BPATH/$VERSION_NGINX
 
-mkdir -p $BPATH/nginx
 ./configure \
   --prefix=/etc/nginx \
   --sbin-path=/usr/sbin/nginx \
