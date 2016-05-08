@@ -1,15 +1,13 @@
 #!/usr/bin/env bash
 
 # Variables
-export VERSION_NGINX=nginx-1.9.14
+export VERSION_NGINX=nginx-1.10.0
 export VERSION_PCRE=pcre-8.38
-export VERSION_LIBRESSL=libressl-2.3.3
-export VERSION_NGX_BROTLI=master
+export VERSION_LIBRESSL=libressl-2.3.4
 
 export SOURCE_LIBRESSL=http://ftp.openbsd.org/pub/OpenBSD/LibreSSL/
 export SOURCE_PCRE=http://ftp.csx.cam.ac.uk/pub/software/programming/pcre/
 export SOURCE_NGINX=http://nginx.org/download/
-export SOURCE_NGX_BROTLI=https://github.com/cloudflare/ngx_brotli_module/archive/
 
 # Clean build directory
 rm -rf build
@@ -34,10 +32,6 @@ rm $VERSION_LIBRESSL.tar.gz
 wget -P ./ $SOURCE_PCRE$VERSION_PCRE.tar.gz
 tar xzf $VERSION_PCRE.tar.gz
 rm $VERSION_PCRE.tar.gz
-
-wget -P ./ $SOURCE_NGX_BROTLI$VERSION_NGX_BROTLI.tar.gz
-tar zxf $VERSION_NGX_BROTLI.tar.gz
-rm $VERSION_NGX_BROTLI.tar.gz
 
 wget -P ./ http://www.linuxfromscratch.org/patches/blfs/svn/pcre-8.38-upstream_fixes-1.patch
 
@@ -87,7 +81,6 @@ cd $BPATH/$VERSION_NGINX
   --with-pcre-jit \
   --with-openssl=$STATICLIBSSL \
   --with-ld-opt="-lrt" \
-  --add-module=$BPATH/ngx_brotli_module-master
 
 touch $STATICLIBSSL/.openssl/include/openssl/ssl.h
 make -j $PROC
