@@ -1,13 +1,11 @@
 #!/usr/bin/env bash
 
 # Variables
-export VERSION_NGINX=nginx-1.10.0
-export VERSION_PCRE=pcre-8.38
-export VERSION_LIBRESSL=libressl-2.3.4
-
-export SOURCE_LIBRESSL=http://ftp.openbsd.org/pub/OpenBSD/LibreSSL/
-export SOURCE_PCRE=http://ftp.csx.cam.ac.uk/pub/software/programming/pcre/
-export SOURCE_NGINX=http://nginx.org/download/
+export VERSION_NGINX=1.10.1
+export VERSION_PCRE=8.39
+export VERSION_ZLIB=1.2.8
+export VERSION_LIBRESSL=2.4.2
+export VERSION_PAGESPEED=1.11.33.2
 
 # Clean build directory
 rm -rf build
@@ -19,38 +17,26 @@ PROC=$(grep -c ^processor /proc/cpuinfo)
 cd build
 
 # Download the source files
-echo "Downloading sources"
+echo "Downloading sources..."
 
-wget -P ./ $SOURCE_NGINX$VERSION_NGINX.tar.gz
-tar xzf $VERSION_NGINX.tar.gz
-rm $VERSION_NGINX.tar.gz
+wget -qO- http://nginx.org/download/nginx-${VERSION_NGINX}.tar.gz | tar xz
+wget -qO- http://ftp.csx.cam.ac.uk/pub/software/programming/pcre/pcre-${VERSION_PCRE}.tar.gz | tar xz
+wget -qO- http://zlib.net/zlib-${VERSION_ZLIB}.tar.gz | tar xz
+wget -qO- http://ftp.openbsd.org/pub/OpenBSD/LibreSSL/libressl-${VERSION_LIBRESSL}.tar.gz | tar xz
+wget -q https://github.com/pagespeed/ngx_pagespeed/archive/release-${VERSION_PAGESPEED}-beta.zip -O release-${VERSION_PAGESPEED}-beta.zip; unzip -q release-${VERSION_PAGESPEED}-beta.zip; rm release-${VERSION_PAGESPEED}-beta.zip
+wget -qO- https://dl.google.com/dl/page-speed/psol/${VERSION_PAGESPEED}.tar.gz | tar xz -C ngx_pagespeed-release-${VERSION_PAGESPEED}-beta
 
-wget -P ./ $SOURCE_LIBRESSL$VERSION_LIBRESSL.tar.gz
-tar xzf $VERSION_LIBRESSL.tar.gz
-rm $VERSION_LIBRESSL.tar.gz
-
-wget -P ./ $SOURCE_PCRE$VERSION_PCRE.tar.gz
-tar xzf $VERSION_PCRE.tar.gz
-rm $VERSION_PCRE.tar.gz
-
-wget -P ./ http://www.linuxfromscratch.org/patches/blfs/svn/pcre-8.38-upstream_fixes-1.patch
-
-# Patch PCRE
-cd $VERSION_PCRE
-patch -Np1 -i ../pcre-8.38-upstream_fixes-1.patch
-
-cd ../
 export BPATH=$(pwd)
-export STATICLIBSSL=$BPATH/$VERSION_LIBRESSL
+export STATICLIBSSL=${BPATH}/libressl-${VERSION_LIBRESSL}
 
 # Build static LibreSSL
-echo "Configure & Build LibreSSL"
+echo "Configure & Build LibreSSL..."
 cd $STATICLIBSSL
-./configure LDFLAGS=-lrt --prefix=${STATICLIBSSL}/.openssl/ && make install-strip -j $PROC
+./configure LDFLAGS=-lrt --prefix=${STATICLIBSSL}/.openssl/ && make install-strip -j ${PROC}
 
 # Build nginx
-echo "Configure & Build Nginx"
-cd $BPATH/$VERSION_NGINX
+echo "Configure & Build Nginx..."
+cd $BPATH/nginx-${VERSION_NGINX}
 
 ./configure \
   --prefix=/etc/nginx \
@@ -77,13 +63,15 @@ cd $BPATH/$VERSION_NGINX
   --with-ipv6 \
   --with-http_v2_module \
   --with-libatomic \
-  --with-pcre=$BPATH/$VERSION_PCRE \
+  --with-pcre=${BPATH}/pcre-${VERSION_PCRE} \
   --with-pcre-jit \
-  --with-openssl=$STATICLIBSSL \
+  --with-zlib=${BPATH}/zlib-${VERSION_ZLIB} \
+  --with-openssl=${STATICLIBSSL} \
   --with-ld-opt="-lrt" \
+  --add-module=${BPATH}/ngx_pagespeed-release-${VERSION_PAGESPEED}-beta
 
-touch $STATICLIBSSL/.openssl/include/openssl/ssl.h
-make -j $PROC
+touch ${STATICLIBSSL}/.openssl/include/openssl/ssl.h
+make -j ${PROC}
 
 echo "----------------------------------------------------------------------------------------";
 echo "Done.";
