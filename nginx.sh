@@ -1,11 +1,12 @@
 #!/usr/bin/env bash
 
 # Variables
-export VERSION_NGINX=1.10.1
+export VERSION_NGINX=1.11.4
 export VERSION_PCRE=8.39
 export VERSION_ZLIB=1.2.8
-export VERSION_LIBRESSL=2.4.2
-export VERSION_PAGESPEED=1.11.33.2
+export VERSION_LIBRESSL=2.5.0
+export VERSION_PAGESPEED=latest-stable
+export VERSION_PSOL=1.11.33.4
 
 # Clean build directory
 rm -rf build
@@ -19,15 +20,16 @@ cd build
 # Download the source files
 echo "Downloading sources..."
 
-wget -qO- http://nginx.org/download/nginx-${VERSION_NGINX}.tar.gz | tar xz
-wget -qO- http://ftp.csx.cam.ac.uk/pub/software/programming/pcre/pcre-${VERSION_PCRE}.tar.gz | tar xz
-wget -qO- http://zlib.net/zlib-${VERSION_ZLIB}.tar.gz | tar xz
-wget -qO- http://ftp.openbsd.org/pub/OpenBSD/LibreSSL/libressl-${VERSION_LIBRESSL}.tar.gz | tar xz
-wget -q https://github.com/pagespeed/ngx_pagespeed/archive/release-${VERSION_PAGESPEED}-beta.zip -O release-${VERSION_PAGESPEED}-beta.zip; unzip -q release-${VERSION_PAGESPEED}-beta.zip; rm release-${VERSION_PAGESPEED}-beta.zip
-wget -qO- https://dl.google.com/dl/page-speed/psol/${VERSION_PAGESPEED}.tar.gz | tar xz -C ngx_pagespeed-release-${VERSION_PAGESPEED}-beta
+mkdir nginx pcre zlib libressl pagespeed pagespeed/psol
+wget -qO- http://nginx.org/download/nginx-${VERSION_NGINX}.tar.gz | tar xz --strip-components=1 -C nginx
+wget -qO- http://ftp.csx.cam.ac.uk/pub/software/programming/pcre/pcre-${VERSION_PCRE}.tar.gz | tar xz --strip-components=1 -C pcre
+wget -qO- http://zlib.net/zlib-${VERSION_ZLIB}.tar.gz | tar xz --strip-components=1 -C zlib
+wget -qO- http://ftp.openbsd.org/pub/OpenBSD/LibreSSL/libressl-${VERSION_LIBRESSL}.tar.gz | tar xz --strip-components=1 -C libressl
+wget -qO- https://github.com/pagespeed/ngx_pagespeed/archive/${VERSION_PAGESPEED}.tar.gz | tar xz --strip-components=1 -C pagespeed
+wget -qO- https://dl.google.com/dl/page-speed/psol/${VERSION_PSOL}.tar.gz | tar xz --strip-components=1 -C pagespeed/psol
 
 export BPATH=$(pwd)
-export STATICLIBSSL=${BPATH}/libressl-${VERSION_LIBRESSL}
+export STATICLIBSSL=${BPATH}/libressl
 
 # Build static LibreSSL
 echo "Configure & Build LibreSSL..."
@@ -36,7 +38,7 @@ cd $STATICLIBSSL
 
 # Build nginx
 echo "Configure & Build Nginx..."
-cd $BPATH/nginx-${VERSION_NGINX}
+cd $BPATH/nginx
 
 ./configure \
   --prefix=/etc/nginx \
@@ -63,12 +65,12 @@ cd $BPATH/nginx-${VERSION_NGINX}
   --with-ipv6 \
   --with-http_v2_module \
   --with-libatomic \
-  --with-pcre=${BPATH}/pcre-${VERSION_PCRE} \
+  --with-pcre=${BPATH}/pcre \
   --with-pcre-jit \
-  --with-zlib=${BPATH}/zlib-${VERSION_ZLIB} \
+  --with-zlib=${BPATH}/zlib \
   --with-openssl=${STATICLIBSSL} \
   --with-ld-opt="-lrt" \
-  --add-module=${BPATH}/ngx_pagespeed-release-${VERSION_PAGESPEED}-beta
+  --add-module=${BPATH}/pagespeed
 
 touch ${STATICLIBSSL}/.openssl/include/openssl/ssl.h
 make -j ${PROC}
