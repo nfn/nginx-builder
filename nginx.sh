@@ -27,6 +27,7 @@ wget -qO- http://zlib.net/zlib-${VERSION_ZLIB}.tar.gz | tar xz --strip-component
 wget -qO- http://ftp.openbsd.org/pub/OpenBSD/LibreSSL/libressl-${VERSION_LIBRESSL}.tar.gz | tar xz --strip-components=1 -C libressl
 wget -qO- https://github.com/pagespeed/ngx_pagespeed/archive/${VERSION_PAGESPEED}.tar.gz | tar xz --strip-components=1 -C pagespeed
 wget -qO- https://dl.google.com/dl/page-speed/psol/${VERSION_PSOL}.tar.gz | tar xz --strip-components=1 -C pagespeed/psol
+git clone --recursive https://github.com/cloudflare/ngx_brotli_module.git
 
 export BPATH=$(pwd)
 export STATICLIBSSL=${BPATH}/libressl
@@ -70,6 +71,7 @@ cd $BPATH/nginx
   --with-zlib=${BPATH}/zlib \
   --with-openssl=${STATICLIBSSL} \
   --with-ld-opt="-lrt" \
+  --add-module=${BPATH}/ngx_brotli_module \
   --add-module=${BPATH}/pagespeed
 
 touch ${STATICLIBSSL}/.openssl/include/openssl/ssl.h
