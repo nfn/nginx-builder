@@ -1,12 +1,14 @@
 #!/usr/bin/env bash
 
+# Install dependencies
+# sudo yum install gcc-c++ jemalloc-devel git libatomic_ops-devel unzip wget
+
 # Variables
-export VERSION_NGINX=1.11.4
-export VERSION_PCRE=8.39
-export VERSION_ZLIB=1.2.8
-export VERSION_LIBRESSL=2.5.0
-export VERSION_PAGESPEED=latest-stable
-export VERSION_PSOL=1.11.33.4
+export VERSION_NGINX=1.11.9
+export VERSION_PCRE=8.40
+export VERSION_ZLIB=1.2.11
+export VERSION_LIBRESSL=2.4.4
+export VERSION_PAGESPEED=1.12.34.2
 
 # Clean build directory
 rm -rf build
@@ -25,9 +27,13 @@ wget -qO- http://nginx.org/download/nginx-${VERSION_NGINX}.tar.gz | tar xz --str
 wget -qO- http://ftp.csx.cam.ac.uk/pub/software/programming/pcre/pcre-${VERSION_PCRE}.tar.gz | tar xz --strip-components=1 -C pcre
 wget -qO- http://zlib.net/zlib-${VERSION_ZLIB}.tar.gz | tar xz --strip-components=1 -C zlib
 wget -qO- http://ftp.openbsd.org/pub/OpenBSD/LibreSSL/libressl-${VERSION_LIBRESSL}.tar.gz | tar xz --strip-components=1 -C libressl
-wget -qO- https://github.com/pagespeed/ngx_pagespeed/archive/${VERSION_PAGESPEED}.tar.gz | tar xz --strip-components=1 -C pagespeed
-wget -qO- https://dl.google.com/dl/page-speed/psol/${VERSION_PSOL}.tar.gz | tar xz --strip-components=1 -C pagespeed/psol
-git clone --recursive https://github.com/cloudflare/ngx_brotli_module.git
+git clone --recursive https://github.com/cloudflare/ngx_brotli_module.git brotli
+wget -qO- https://github.com/pagespeed/ngx_pagespeed/archive/v${VERSION_PAGESPEED}-beta.tar.gz | tar xz --strip-components=1 -C pagespeed
+
+cd pagespeed
+psol_url=$(scripts/format_binary_url.sh PSOL_BINARY_URL)
+wget -qO- ${psol_url} | tar xz --strip-components=1 -C psol
+cd ../
 
 export BPATH=$(pwd)
 export STATICLIBSSL=${BPATH}/libressl
@@ -40,6 +46,9 @@ cd $STATICLIBSSL
 # Build nginx
 echo "Configure & Build Nginx..."
 cd $BPATH/nginx
+
+# wget https://raw.githubusercontent.com/cloudflare/sslconfig/master/patches/nginx__1.11.5_dynamic_tls_records.patch
+# patch -p1 < nginx__1.11.5_dynamic_tls_records.patch
 
 ./configure \
   --prefix=/etc/nginx \
@@ -63,21 +72,16 @@ cd $BPATH/nginx
   --with-http_auth_request_module \
   --with-threads \
   --with-file-aio \
-  --with-ipv6 \
   --with-http_v2_module \
   --with-libatomic \
-  --with-pcre=${BPATH}/pcre \
+  --with-pcre=../pcre \
   --with-pcre-jit \
-  --with-zlib=${BPATH}/zlib \
-  --with-openssl=${STATICLIBSSL} \
-  --with-ld-opt="-lrt" \
-  --add-module=${BPATH}/ngx_brotli_module \
-  --add-module=${BPATH}/pagespeed
+  --with-ld-opt="-lrt -ljemalloc -Wl,-z,relro" \
+  --with-cc-opt="-g -O2 -fstack-protector --param=ssp-buffer-size=4 -Wformat -Werror=format-security -Wp,-D_FORTIFY_SOURCE=2" \
+  --with-zlib=../zlib \
+  --with-openssl=../libressl \
+  --add-module=../brotli \
+  --add-module=../pagespeed
 
 touch ${STATICLIBSSL}/.openssl/include/openssl/ssl.h
 make -j ${PROC}
-
-echo "----------------------------------------------------------------------------------------";
-echo "Done.";
-echo "You can now 'make install' or just copy the nginx binary to /usr/sbin folder!";
-echo "Don't forget to copy 'nginx.service' to /lib/systemd/system/ and logrotate to it's place";
